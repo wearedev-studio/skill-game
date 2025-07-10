@@ -52,6 +52,24 @@ const UserBalance = styled.p`
   margin-top: 1rem;
 `;
 
+const ButtonGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1.5rem;
+`;
+
+const SecondaryButton = styled(StyledButton)`
+  background-color: var(--dark-surface);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+
+  &:hover {
+    background-color: rgba(97, 218, 251, 0.1);
+  }
+`;
+
 
 const ProfilePage: React.FC = () => {
     const { user } = useAuth();
@@ -78,20 +96,21 @@ const ProfilePage: React.FC = () => {
     return (
         <PageContainer>
             <ProfileCard>
-                <ProfileAvatar 
-                  src={user.avatar} 
-                  alt={`Аватар ${user.username}`} 
-                  // Добавляем заглушку на случай, если картинка не загрузится
-                  onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/120'; }}
-                />
+                <ProfileAvatar src={user.avatar} alt={`Аватар ${user.username}`} />
                 <ProfileDetails>
                     <UserName>{user.username}</UserName>
                     <UserEmail>{user.email}</UserEmail>
                     <UserBalance>Баланс: {user.balance} 💰</UserBalance>
                 </ProfileDetails>
-                <StyledButton onClick={() => navigate(`/find-game`)}>
-                    Начать новую игру
-                </StyledButton>
+                
+                <ButtonGroup>
+                    <StyledButton onClick={() => navigate('/find-game')}>
+                        Играть Онлайн
+                    </StyledButton>
+                    <SecondaryButton onClick={() => navigate('/game/offline')}>
+                        Играть с Ботом
+                    </SecondaryButton>
+                </ButtonGroup>
             </ProfileCard>
         </PageContainer>
     );
