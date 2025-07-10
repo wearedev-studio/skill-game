@@ -28,11 +28,6 @@ const ModalContent = styled.div`
   gap: 1.5rem;
 `;
 
-const Title = styled.h2<{ won: any }>`
-  font-size: 2.5rem;
-  color: ${props => props.won ? '#4caf50' : 'var(--error-color)'};
-`;
-
 const ButtonGroup = styled.div`
   display: flex;
   gap: 1rem;
@@ -44,23 +39,32 @@ const InfoText = styled.p`
   margin-bottom: 0.5rem;
 `;
 
+const Title = styled.h2<{ status: 'win' | 'loss' | 'draw' }>`
+  font-size: 2.5rem;
+  color: ${props => {
+    if (props.status === 'win') return '#4caf50';
+    if (props.status === 'loss') return 'var(--error-color)';
+    return 'var(--primary-color)';
+  }};
+`;
+
 type RematchStatus = 'none' | 'offered' | 'received';
 
 interface GameOverModalProps {
-    isWinner: boolean | null;
+    winnerSymbol: string | null; // 'X', 'O', 'draw', или null
+    playerSymbol: 'X' | 'O' | null;
     rematchStatus: RematchStatus;
     onOfferRematch: () => void;
     onAcceptRematch: () => void;
     onRejectRematch: () => void;
 }
 
-const GameOverModal: React.FC<GameOverModalProps> = ({ isWinner, rematchStatus, onOfferRematch, onAcceptRematch, onRejectRematch }) => {
+const GameOverModal: React.FC<GameOverModalProps> = ({ winnerSymbol, playerSymbol, rematchStatus, onOfferRematch, onAcceptRematch, onRejectRematch }) => {
     const [timer, setTimer] = useState(5);
 
     useEffect(() => {
-        // Запускаем таймер только если мы получили предложение
         if (rematchStatus === 'received') {
-            setTimer(5); // Сбрасываем таймер
+            setTimer(5);
             const interval = setInterval(() => {
                 setTimer(prev => (prev > 0 ? prev - 1 : 0));
             }, 1000);
@@ -68,7 +72,20 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ isWinner, rematchStatus, 
         }
     }, [rematchStatus]);
 
-    const titleText = isWinner === null ? "Ничья!" : isWinner ? "Вы победили!" : "Вы проиграли!";
+    // Определяем текст и статус для заголовка
+     let titleText: string;
+    let titleStatus: 'win' | 'loss' | 'draw';
+
+    if (winnerSymbol === 'draw') {
+        titleText = "Ничья!";
+        titleStatus = 'draw';
+    } else if (winnerSymbol === playerSymbol) {
+        titleText = "Вы победили!";
+        titleStatus = 'win';
+    } else {
+        titleText = "Вы проиграли!";
+        titleStatus = 'loss';
+    }
 
     const renderContent = () => {
         switch (rematchStatus) {
@@ -102,7 +119,7 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ isWinner, rematchStatus, 
     return (
         <ModalOverlay>
             <ModalContent>
-                <Title won={isWinner}>{titleText}</Title>
+                <Title status={titleStatus}>{titleText}</Title>
                 {renderContent()}
             </ModalContent>
         </ModalOverlay>

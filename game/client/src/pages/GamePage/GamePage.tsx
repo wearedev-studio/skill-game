@@ -164,8 +164,13 @@ const GamePage: React.FC = () => {
             </BoardGrid>
             {isGameOver && (
                 <GameOverModal
-                    isWinner={winner === playerSymbol}
-                    rematchStatus={rematchStatus} // Передаем новый статус
+                    // --- ЗАМЕНИТЕ ЭТУ СТРОКУ ---
+                    // Было: isWinner={winner === playerSymbol}
+                    // Стало:
+                    winnerSymbol={winner}
+                    playerSymbol={playerSymbol}
+                    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+                    rematchStatus={rematchStatus}
                     onOfferRematch={handleOfferRematch}
                     onAcceptRematch={handleAcceptRematch}
                     onRejectRematch={handleRejectRematch}
