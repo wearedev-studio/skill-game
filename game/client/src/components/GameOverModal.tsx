@@ -52,7 +52,7 @@ type RematchStatus = 'none' | 'offered' | 'received';
 
 interface GameOverModalProps {
     winnerSymbol: string | null; // 'X', 'O', 'draw', или null
-    playerSymbol: 'X' | 'O' | null;
+    playerSymbol: 'X' | 'O' | 'w' | 'b' | null;
     rematchStatus: RematchStatus;
     onOfferRematch: () => void;
     onAcceptRematch: () => void;
@@ -96,6 +96,7 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ winnerSymbol, playerSymbo
                         <p>Принять? ({timer}с)</p>
                         <ButtonGroup>
                             <StyledButton onClick={onAcceptRematch} style={{backgroundColor: '#4caf50'}}>Принять</StyledButton>
+                            {/* Эта кнопка вызывает onRejectRematch */}
                             <StyledButton onClick={onRejectRematch} style={{backgroundColor: '#f44336'}}>Отказаться</StyledButton>
                         </ButtonGroup>
                     </>
@@ -109,6 +110,7 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ winnerSymbol, playerSymbo
                         <InfoText>Сыграть еще раз?</InfoText>
                         <ButtonGroup>
                             <StyledButton onClick={onOfferRematch}>Предложить реванш</StyledButton>
+                            {/* И эта кнопка тоже вызывает onRejectRematch */}
                             <StyledButton onClick={onRejectRematch} style={{backgroundColor: 'grey'}}>Не хочу</StyledButton>
                         </ButtonGroup>
                     </>

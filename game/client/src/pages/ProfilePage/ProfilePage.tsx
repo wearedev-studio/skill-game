@@ -70,6 +70,28 @@ const SecondaryButton = styled(StyledButton)`
   }
 `;
 
+const GameSelection = styled.div`
+  width: 100%;
+  margin-top: 2rem;
+  border-top: 1px solid #444;
+  padding-top: 2rem;
+`;
+
+const GameCard = styled.div`
+  background-color: var(--dark-bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--dark-surface);
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const GameTitle = styled.h3`
+  font-size: 1.2rem;
+`;
+
 
 const ProfilePage: React.FC = () => {
     const { user } = useAuth();
@@ -82,6 +104,11 @@ const ProfilePage: React.FC = () => {
             navigate('/login');
         }
     }, [user, navigate]);
+
+    const handleFindGame = (gameType: 'tic-tac-toe' | 'checkers') => {
+        // Переходим на страницу поиска, передавая тип игры
+        navigate('/find-game', { state: { gameType } });
+    };
 
     // Пока данные пользователя загружаются или если он был перенаправлен,
     // можно показать заглушку.
@@ -103,14 +130,20 @@ const ProfilePage: React.FC = () => {
                     <UserBalance>Баланс: {user.balance} 💰</UserBalance>
                 </ProfileDetails>
                 
-                <ButtonGroup>
-                    <StyledButton onClick={() => navigate('/find-game')}>
-                        Играть Онлайн
-                    </StyledButton>
-                    <SecondaryButton onClick={() => navigate('/game/offline')}>
-                        Играть с Ботом
-                    </SecondaryButton>
-                </ButtonGroup>
+                <GameSelection>
+                    <GameCard>
+                        <GameTitle>Крестики-нолики</GameTitle>
+                        <StyledButton onClick={() => handleFindGame('tic-tac-toe')}>
+                            Играть Онлайн
+                        </StyledButton>
+                    </GameCard>
+                    <GameCard>
+                        <GameTitle>Шашки</GameTitle>
+                        <StyledButton onClick={() => handleFindGame('checkers')}>
+                            Играть Онлайн
+                        </StyledButton>
+                    </GameCard>
+                </GameSelection>
             </ProfileCard>
         </PageContainer>
     );

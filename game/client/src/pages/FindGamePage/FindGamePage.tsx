@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation  } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { socket } from '../../socket';
@@ -22,6 +22,8 @@ const Spinner = styled.div`
 const FindGamePage: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const gameType = location.state?.gameType || 'tic-tac-toe'; // Получаем тип игры
 
     useEffect(() => {
         if (!user) {
@@ -29,13 +31,19 @@ const FindGamePage: React.FC = () => {
             return;
         }
 
-        // Сообщаем серверу, что мы ищем игру
-        socket.emit('findGame', { user });
+        // // Сообщаем серверу, что мы ищем игру
+        // socket.emit('findGame', { user });
 
-        // Слушаем событие "gameFound"
-        socket.on('gameFound', ({ gameId, players }) => {
-            // Переходим на страницу игры, передавая информацию об игроках
-            navigate(`/game/${gameId}`, { state: { players } });
+        // // Слушаем событие "gameFound"
+        // socket.on('gameFound', ({ gameId, players }) => {
+        //     // Переходим на страницу игры, передавая информацию об игроках
+        //     navigate(`/game/${gameId}`, { state: { players } });
+        // });
+
+        socket.emit('findGame', { user, gameType });
+
+        socket.on('gameFound', ({ gameId }) => {
+            navigate(`/game/${gameId}`); // Просто переходим на страницу игры
         });
 
         // Очистка при размонтировании компонента (если пользователь ушел со страницы)
@@ -43,7 +51,7 @@ const FindGamePage: React.FC = () => {
             socket.emit('cancelFindGame');
             socket.off('gameFound');
         };
-    }, [user, navigate]);
+    }, [user, navigate, gameType]);
 
     return (
         <PageContainer>

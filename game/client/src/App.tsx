@@ -8,6 +8,9 @@ import FindGamePage from './pages/FindGamePage/FindGamePage';
 import GamePage from './pages/GamePage/GamePage';
 import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
 import OfflineGamePage from './pages/OfflineGamePage/OfflineGamePage';
+
+import OnlineGamePage from './pages/OnlineGamePage/OnlineGamePage';
+
 import Navbar from './components/Navbar'; // Импортируем Navbar
 import { PageContainer } from './styles/StyledComponents';
 
@@ -21,9 +24,10 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/game/:gameId" element={<OnlineGamePage />} />
           <Route path="/find-game" element={<FindGamePage />} />
           <Route path="/game/offline" element={<OfflineGamePage />} />
-          <Route path="/game/:gameId" element={<GamePage />} />
+          {/* <Route path="/game/:gameId" element={<GamePage />} /> */}
           <Route path="/" element={
             <PageContainer>
               <h1>Добро пожаловать в Крестики-Нолики Онлайн!</h1>
