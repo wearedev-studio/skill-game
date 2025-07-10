@@ -1,0 +1,16 @@
+{
+  "header": {
+    "games": "Games",
+    "tournaments": "Tournaments",
+    "faq": "FAQ",
+    "play_button": "Start Playing"
+  },
+  "hero": {
+    "title": "Challenge players from all over the world",
+    "subtitle": "Chess, Checkers, Backgammon, and Tic-Tac-Toe. Play for fun or compete in tournaments with real prizes.",
+    "join_button": "Join for free"
+  },
+  "games_section": {
+    "title": "Our Games"
+  }
+}

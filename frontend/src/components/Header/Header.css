@@ -1,0 +1,49 @@
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid #333;
+}
+.logo { font-size: 1.5rem; font-weight: bold; }
+.site-header nav a { margin: 0 1rem; color: var(--text-color); text-decoration: none; }
+.cta-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.lang-switcher button {
+    background: none;
+    border: 1px solid var(--primary-color);
+    color: var(--text-color);
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+}
+
+.lang-switcher button:disabled {
+    background-color: var(--primary-color);
+    cursor: not-allowed;
+}
+
+.lang-switcher button:first-child {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+.lang-switcher button:last-child {
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-left: none;
+}
