@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation  } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { socket } from '../../socket';
@@ -23,35 +23,40 @@ const FindGamePage: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const gameType = location.state?.gameType || 'tic-tac-toe'; // Получаем тип игры
 
     useEffect(() => {
+        // Проверяем наличие пользователя. Если его нет, переходим на страницу входа.
         if (!user) {
             navigate('/login');
             return;
         }
 
-        // // Сообщаем серверу, что мы ищем игру
-        // socket.emit('findGame', { user });
+        // Получаем тип игры из состояния навигации
+        const gameType = location.state?.gameType || 'tic-tac-toe';
 
-        // // Слушаем событие "gameFound"
-        // socket.on('gameFound', ({ gameId, players }) => {
-        //     // Переходим на страницу игры, передавая информацию об игроках
-        //     navigate(`/game/${gameId}`, { state: { players } });
-        // });
+        // Определяем функцию-обработчик для события 'gameFound'
+        const onGameFound = ({ gameId }: { gameId: string }) => {
+            // Переходим на страницу игры, как только сервер нашел нам пару
+            navigate(`/game/${gameId}`);
+        };
 
+        // Подписываемся на событие от сервера
+        socket.on('gameFound', onGameFound);
+        
+        // Отправляем на сервер запрос на поиск игры
         socket.emit('findGame', { user, gameType });
 
-        socket.on('gameFound', ({ gameId }) => {
-            navigate(`/game/${gameId}`); // Просто переходим на страницу игры
-        });
-
-        // Очистка при размонтировании компонента (если пользователь ушел со страницы)
+        // Функция очистки, которая сработает только при уходе со страницы
         return () => {
+            // При уходе мы отписываемся от 'gameFound' и отправляем отмену поиска.
+            // Это очень важно, чтобы не остаться в очереди "призраком".
+            socket.off('gameFound', onGameFound);
             socket.emit('cancelFindGame');
-            socket.off('gameFound');
         };
-    }, [user, navigate, gameType]);
+    // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПУСТОЙ МАССИВ ЗАВИСИМОСТЕЙ ---
+    // Это гарантирует, что эффект запустится один раз при монтировании
+    // и очистится один раз при размонтировании (когда вы уходите со страницы).
+    }, []);
 
     return (
         <PageContainer>
