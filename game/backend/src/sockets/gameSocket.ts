@@ -4,6 +4,7 @@ import * as ticTacToeLogic from '../game-logic/ticTacToe';
 import * as checkersLogic from '../game-logic/checkers';
 import * as backgammonLogic from '../game-logic/backgammon';
 import * as chessLogic from '../game-logic/chess';
+import { Chess } from 'chess.js';
 
 
 // 2. Создаем объект-карту, где каждому типу игры соответствует свой модуль с правилами.
@@ -127,34 +128,113 @@ export const handleGameSockets = (io: Server) => {
 
         // --- ГЛАВНЫЙ ОБРАБОТЧИК ХОДА (ДИСПЕТЧЕР) ---
         // Он не знает, как делать ход. Он только передает данные в нужный модуль.
+        // socket.on('makeMove', ({ gameId, move }) => {
+        //     const game = games[gameId];
+        //     if (!game) return;
+
+        //     // 1. Определяем, какой "движок" использовать, по 'gameType' из объекта игры.
+        //     const gameModule = gameModules[game.gameType];
+
+        //     // 2. Вызываем функцию 'applyMove' из этого модуля.
+        //     // Передаем ей текущее состояние игры (gameState) и сам ход (move).
+        //     const result = gameModule.applyMove(game.gameState, move);
+
+        //     if (result.error) {
+        //         console.log(`Invalid move in game ${gameId}: ${result.error}`);
+        //         // Можно отправить ошибку обратно игроку, если нужно
+        //         return;
+        //     }
+
+        //     // 3. Обновляем 'gameState' в нашем объекте игры результатом из модуля.
+        //     game.gameState = result.newState;
+
+        //     // 4. Рассылаем ВСЕМ игрокам в комнате обновленный объект игры.
+        //     io.in(gameId).emit('gameStateUpdate', game);
+
+        //     // 5. Если модуль сообщил, что есть победитель, объявляем об окончании игры.
+        //     if (result.winner) {
+        //         io.in(gameId).emit('gameOver', { winnerSymbol: result.winner });
+        //     }
+        // });
+
         socket.on('makeMove', ({ gameId, move }) => {
             const game = games[gameId];
             if (!game) return;
 
-            // 1. Определяем, какой "движок" использовать, по 'gameType' из объекта игры.
-            const gameModule = gameModules[game.gameType];
+            // Проверка, что ход делает правильный игрок
+            const playerSymbol = Object.keys(game.players).find(key => game.players[key].socketId === socket.id);
+            if (game.gameState.currentPlayer !== playerSymbol) {
+                return console.log(`[REJECT] Not player's turn.`);
+            }
 
-            // 2. Вызываем функцию 'applyMove' из этого модуля.
-            // Передаем ей текущее состояние игры (gameState) и сам ход (move).
+            // Добавляем символ игрока для крестиков-ноликов, т.к. их логика этого требует
+            if (game.gameType === 'tic-tac-toe') {
+                move.playerSymbol = playerSymbol;
+            }
+
+            const gameModule = gameModules[game.gameType];
             const result = gameModule.applyMove(game.gameState, move);
 
             if (result.error) {
-                console.log(`Invalid move in game ${gameId}: ${result.error}`);
-                // Можно отправить ошибку обратно игроку, если нужно
-                return;
+                return console.log(`[REJECT] Invalid Move: ${result.error}`);
             }
-
-            // 3. Обновляем 'gameState' в нашем объекте игры результатом из модуля.
+            
             game.gameState = result.newState;
-
-            // 4. Рассылаем ВСЕМ игрокам в комнате обновленный объект игры.
             io.in(gameId).emit('gameStateUpdate', game);
 
-            // 5. Если модуль сообщил, что есть победитель, объявляем об окончании игры.
             if (result.winner) {
                 io.in(gameId).emit('gameOver', { winnerSymbol: result.winner });
             }
         });
+
+        // socket.on('makeChessMove', ({ gameId, move }) => {
+        //     console.log("move", move);
+        //     const game = games[gameId];
+        //     if (!game || game.gameType !== 'chess') return;
+
+        //     // Проверяем очередность хода прямо здесь для надежности
+        //     const playerSymbol = Object.keys(game.players).find(key => game.players[key].socketId === socket.id);
+        //     if (game.gameState.currentPlayer !== playerSymbol) {
+        //         return console.error(`[Chess-REJECT] Отклонено: не очередь игрока ${playerSymbol}`);
+        //     }
+
+        //     const result = chessLogic.applyMove(game.gameState, move);
+
+        //     if (result.error) {
+        //         return console.error(`[Chess-REJECT] Ход отклонен логикой: ${result.error}`);
+        //     }
+
+        //     game.gameState = result.newState;
+        //     io.in(gameId).emit('gameStateUpdate', game);
+
+        //     if (result.winner) {
+        //         io.in(gameId).emit('gameOver', { winnerSymbol: result.winner });
+        //     }
+        // });
+
+        console.log("GAMES", games);
+
+// socket.on('makeChessMove', ({ gameId, move }) => {
+//   const game = games.get(gameId);
+//   if (!game) return;
+
+//   console.log("game", game);
+
+//   const chess = new Chess(game.gameState.boardFen);
+//   const result = chess.move(move);
+
+//   if (!result) return; // нелегальный ход
+
+//   game.gameState.boardFen = chess.fen();
+//   game.gameState.currentPlayer = chess.turn(); // 'w' или 'b'
+
+//   io.to(gameId).emit('updateGameState', game.gameState);
+// });
+
+socket.on('makeChessMove', (data) => {
+    // emit to all sockets in the room except the emitting socket.
+    socket.to(data.gameId).emit('makeChessMove', data.move);
+  });
 
         // --- НАЧАЛО НОВЫХ ОБРАБОТЧИКОВ ДЛЯ НАРД ---
 

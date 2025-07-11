@@ -8,6 +8,7 @@ import GameOverModal from '../../components/GameOverModal';
 import TicTacToeBoard from '../../components/game-boards/TicTacToeBoard';
 import CheckersBoard from '../../components/game-boards/CheckersBoard';
 import BackgammonBoard from '../../components/game-boards/BackgammonBoard';
+import ChessBoard from '../../components/game-boards/ChessBoard';
 
 // --- Стили ---
 const GameHeader = styled.div`
@@ -78,8 +79,7 @@ const OnlineGamePage: React.FC = () => {
     const [isGameOver, setIsGameOver] = useState(false);
     const [winner, setWinner] = useState<string | null>(null);
     const [rematchStatus, setRematchStatus] = useState<RematchStatus>('none');
-    const [turnError, setTurnError] = useState<string | null>(null); // НОВОЕ СОСТОЯНИЕ ДЛЯ ОШИБКИ
-
+    const [turnError, setTurnError] = useState<string | null>(null);
     
     // Состояния для нард
     const [tempGameState, setTempGameState] = useState<any | null>(null);
@@ -87,21 +87,39 @@ const OnlineGamePage: React.FC = () => {
 
     useEffect(() => {
         if (!gameId || !user) return;
+
         const handleGameStateUpdate = (serverState: any) => {
+            console.log('Получено новое состояние игры:', serverState);
             setGame(serverState);
             if (serverState.gameType === 'backgammon') {
                 setTempGameState(serverState.gameState);
                 setCurrentTurnMoves([]); 
             }
         };
-        const handleGameOver = ({ winnerSymbol }: { winnerSymbol: string | null }) => { setWinner(winnerSymbol); setIsGameOver(true); };
+        
+        const handleGameOver = ({ winnerSymbol }: { winnerSymbol: string | null }) => {
+            setWinner(winnerSymbol);
+            setIsGameOver(true);
+        };
+
         const handleRematchOffered = () => setRematchStatus('received');
-        const handleRematchAccepted = (serverState: any) => { setIsGameOver(false); setWinner(null); setRematchStatus('none'); setGame(serverState); };
+
+        const handleRematchAccepted = (serverState: any) => {
+            setIsGameOver(false);
+            setWinner(null);
+            setRematchStatus('none');
+            setGame(serverState);
+        };
+
         const handleRematchRejected = () => navigate('/profile');
-        const handleGameNotFound = () => { alert("Игра не найдена или была завершена."); navigate('/profile'); };
+
+        const handleGameNotFound = () => {
+            alert("Игра не найдена или была завершена.");
+            navigate('/profile');
+        };
+
         const handleTurnError = ({ message }: { message: string }) => {
             setTurnError(message);
-            // Прячем сообщение через 3 секунды
             setTimeout(() => {
                 setTurnError(null);
             }, 3000);
@@ -116,6 +134,7 @@ const OnlineGamePage: React.FC = () => {
         socket.on('turnError', handleTurnError);
         
         socket.emit('requestGameState', gameId);
+
         return () => {
             socket.off('gameStateUpdate', handleGameStateUpdate);
             socket.off('gameOver', handleGameOver);
@@ -136,9 +155,10 @@ const OnlineGamePage: React.FC = () => {
     const isMyTurn = useMemo(() => game?.gameState.currentPlayer === playerSymbol, [game, playerSymbol]);
 
     const handleMove = (moveData: any) => {
-        if (!game) return;
+        if (!game || !isMyTurn) return;
+
         if (game.gameType === 'backgammon') {
-            if (!tempGameState || !isMyTurn || tempGameState.dice.length === 0) return;
+            if (!tempGameState || tempGameState.dice.length === 0) return;
             const tempBoard = JSON.parse(JSON.stringify(tempGameState.board));
             const usedDie = Math.abs(moveData.to - moveData.from);
             const remainingDice = [...tempGameState.dice];
@@ -155,12 +175,13 @@ const OnlineGamePage: React.FC = () => {
             setCurrentTurnMoves(prev => [...prev, moveData]);
         } else {
             let moveToSend = { ...moveData };
-            if (game.gameType === 'tic-tac-toe') moveToSend.playerSymbol = playerSymbol;
+            if (game.gameType === 'tic-tac-toe') {
+                moveToSend.playerSymbol = playerSymbol;
+            }
             socket.emit('makeMove', { gameId, move: moveToSend });
         }
     };
 
-    // Функции для нард
     const handleRollDice = () => socket.emit('rollDice', { gameId });
     const handleSubmitTurn = () => socket.emit('submitTurn', { gameId, moves: currentTurnMoves });
     const handleResetTurn = () => {
@@ -178,22 +199,58 @@ const OnlineGamePage: React.FC = () => {
 
     const { gameState, players, gameType } = game;
     
+    // const renderGameBoard = () => {
+    //     if (!playerSymbol) return <h2>Определение вашей роли...</h2>;
+        
+    //     const props = {
+    //         gameState: gameType === 'backgammon' ? tempGameState : gameState,
+    //         playerSymbol,
+    //         onMove: handleMove,
+    //         gameId: gameId!,
+    //     };
+
+    //     switch (game.gameType) {
+    //         case 'tic-tac-toe': return <TicTacToeBoard {...props as any} />;
+    //         case 'checkers': return <CheckersBoard {...props as any} />;
+    //         case 'backgammon': return <BackgammonBoard {...props as any} />;
+    //         case 'chess': return <ChessBoard {...props as any} />;
+    //         default: return <h2>Неизвестный тип игры: {gameType}</h2>;
+    //     }
+    // };
+
     const renderGameBoard = () => {
         if (!playerSymbol) return <h2>Определение вашей роли...</h2>;
-        const props = {
-            gameState: gameType === 'backgammon' ? tempGameState : gameState,
-            playerSymbol,
-            onMove: handleMove,
-            gameId,
-        };
-        switch (gameType) {
-            case 'tic-tac-toe': return <TicTacToeBoard {...props as any} />;
-            case 'checkers': return <CheckersBoard {...props as any} />;
-            case 'backgammon': return <BackgammonBoard {...props as any} />;
+        
+        switch (game.gameType) {
+            case 'tic-tac-toe':
+            case 'checkers': {
+                // Для этих игр оставляем старую логику с onMove
+                const props = { gameState, playerSymbol, onMove: handleMove };
+                return game.gameType === 'tic-tac-toe' 
+                    ? <TicTacToeBoard {...props as any} /> 
+                    : <CheckersBoard {...props as any} />;
+            }
+            case 'backgammon': {
+                // Для нард своя логика
+                const props = { gameState: tempGameState, playerSymbol, onMove: handleMove };
+                return <BackgammonBoard {...props as any} />;
+            }
+            case 'chess': {
+                if (!gameState || !playerSymbol) return null;
+
+                const props = {
+                    gameId: gameId!,
+                    fen: gameState.boardFen, // <-- из gameState
+                    playerColor: playerSymbol as 'w' | 'b', // <-- переименовываем
+                    isMyTurn: isMyTurn, // <-- добавляем
+                };
+
+                return <ChessBoard gameId={props.gameId} />;
+            }
             default: return <h2>Игра не найдена</h2>;
         }
     };
-    
+
     const p1Symbol = (gameType === 'tic-tac-toe') ? 'X' : 'w';
     const p2Symbol = (gameType === 'tic-tac-toe') ? 'O' : 'b';
     const player1 = players[p1Symbol];
@@ -215,22 +272,15 @@ const OnlineGamePage: React.FC = () => {
             
             {game.gameType === 'backgammon' && tempGameState && (
                 <ControlsContainer>
-                    {/* Кнопка для первого броска, когда еще не определен ходящий */}
                     {gameState.currentPlayer === null && (
                         <StyledButton onClick={handleRollDice}>Бросить кости, чтобы начать</StyledButton>
                     )}
-
-                    {/* Кнопка для обычного броска в свой ход */}
                     {isMyTurn && gameState.dice.length === 0 && gameState.currentPlayer !== null && (
                         <StyledButton onClick={handleRollDice}>Бросить кости</StyledButton>
                     )}
-
-                    {/* Отображение костей */}
                     {tempGameState.dice.length > 0 && (
                         <DiceDisplay>Ваш бросок: {tempGameState.dice.join(' - ')}</DiceDisplay>
                     )}
-
-                    {/* Кнопки управления ходом */}
                     {currentTurnMoves.length > 0 && (
                         <StyledButton onClick={handleResetTurn} style={{backgroundColor: '#c4a70a'}}>Сбросить ход</StyledButton>
                     )}

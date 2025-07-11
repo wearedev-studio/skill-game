@@ -1,0 +1,91 @@
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Chessboard, PieceDropHandlerArgs } from 'react-chessboard';
+import { Chess } from 'chess.js';
+import { socket } from '../../socket';
+
+interface ChessBoardProps {
+  gameId: string;
+//   fen: string;
+//   playerColor: 'w' | 'b';
+//   isMyTurn: boolean;
+}
+
+const ChessBoard: React.FC<ChessBoardProps> = ({
+  gameId,
+
+}) => {
+   // create a chess game using a ref to always have access to the latest game state within closures and maintain the game state across renders
+    const chessGameRef = useRef(new Chess());
+    const chessGame = chessGameRef.current;
+
+    // track the current position of the chess game in state to trigger a re-render of the chessboard
+    const [chessPosition, setChessPosition] = useState(chessGame.fen());
+
+    // make a random "CPU" move
+    function makeRandomMove() {
+      // get all possible moves`
+      const possibleMoves = chessGame.moves();
+
+      // exit if the game is over
+      if (chessGame.isGameOver()) {
+        return;
+      }
+
+      // pick a random move
+      const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+
+      // make the move
+      chessGame.move(randomMove);
+
+      // update the position state
+      setChessPosition(chessGame.fen());
+    }
+
+    // handle piece drop
+    function onPieceDrop({
+      sourceSquare,
+      targetSquare
+    }: PieceDropHandlerArgs) {
+      // type narrow targetSquare potentially being null (e.g. if dropped off board)
+      if (!targetSquare) {
+        return false;
+      }
+
+      // try to make the move according to chess.js logic
+      try {
+        chessGame.move({
+          from: sourceSquare,
+          to: targetSquare,
+          promotion: 'q' // always promote to a queen for example simplicity
+        });
+
+        // update the position state upon successful move to trigger a re-render of the chessboard
+        setChessPosition(chessGame.fen());
+
+        // make random cpu move after a short delay
+        setTimeout(makeRandomMove, 500);
+
+        // return true as the move was successful
+        return true;
+      } catch {
+        // return false as the move was not successful
+        return false;
+      }
+    }
+
+    // set the chessboard options
+    const chessboardOptions = {
+      position: chessPosition,
+      onPieceDrop,
+      id: 'play-vs-random'
+    };
+
+    // render the chessboard
+    return (
+        <div style={{ width: '100%', maxWidth: '600px' }}>
+            <Chessboard options={chessboardOptions} />;
+        </div>
+    )
+};
+
+export default ChessBoard;
